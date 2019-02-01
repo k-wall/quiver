@@ -68,9 +68,12 @@ std::vector<std::string> split(const std::string& s, char delim, int max) {
 struct Client {
     std::string operation;
     std::string id;
+    std::string scheme;
     std::string host;
     std::string port;
     std::string path;
+    std::string username;
+    std::string password;
     std::chrono::seconds desired_duration;
     int desired_count;
     int body_size;
@@ -90,15 +93,27 @@ struct Client {
 
 void Client::run() {
     std::string domain = host + ":" + port;
+    bool tls = scheme == "amqps";
     std::ostringstream oss;
     oss << "{"
         << "protocol: amqp1.0,"
         << "container_id: " << id << ","
-        << "sasl_mechanisms: ANONYMOUS"
+        << "transport: " << (tls ? "ssl" : "tcp") << ","
+        << "ssl_ignore_hostname_verification_failure: true"
         << "}";
     std::string options = oss.str();
 
     Connection conn(domain, options);
+
+    if (!username.empty()) {
+        conn.setOption("username", username);
+        if (!password.empty()) {
+            conn.setOption("password", password);
+        }
+    } else {
+        conn.setOption("sasl_mechanisms", "ANONYMOUS");
+    }
+
     conn.open();
 
     start_time = now();
@@ -217,7 +232,7 @@ int main(int argc, char** argv) {
 
     for (int i = 1; i < argc; i++) {
         auto pair = split(argv[i], '=', 1);
-        kwargs[pair[0]] = pair[1];
+        kwargs[pair[0]] = pair.size() > 1 ? pair[1] : "";
     }
 
     std::string connection_mode = kwargs["connection-mode"];
@@ -237,9 +252,12 @@ int main(int argc, char** argv) {
 
     client.operation = kwargs["operation"];
     client.id = kwargs["id"];
+    client.scheme = kwargs["scheme"];
     client.host = kwargs["host"];
     client.port = kwargs["port"];
     client.path = kwargs["path"];
+    client.username = kwargs["username"];
+    client.password = kwargs["password"];
     client.desired_duration = std::chrono::seconds(std::stoi(kwargs["duration"]));
     client.desired_count = std::stoi(kwargs["count"]);
     client.body_size = std::stoi(kwargs["body-size"]);

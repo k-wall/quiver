@@ -111,8 +111,11 @@ class QuiverArrowCommand(Command):
                                  help="Operate in passive mode")
         self.parser.add_argument("--prelude", metavar="PRELUDE", default="",
                                  help="Commands to precede the impl invocation")
+        self.parser.add_argument("--insecure", action="store_true",
+                                 help="Insecure TLS connections i.e. neither verification of trust"
+                                      " nor the verification of hostname (client mode only).")
 
-        self.add_common_test_arguments()
+    self.add_common_test_arguments()
         self.add_common_tool_arguments()
 
     def init(self):
@@ -145,6 +148,9 @@ class QuiverArrowCommand(Command):
         if self.args.passive:
             self.channel_mode = "passive"
 
+        if self.args.insecure:
+            self.insecure = True
+
         self.init_url_attributes()
         self.init_common_test_attributes()
         self.init_common_tool_attributes()
@@ -158,6 +164,9 @@ class QuiverArrowCommand(Command):
 
         if self.durable:
             flags.append("durable")
+
+        if self.insecure:
+            flags.append("insecure")
 
         self.flags = ",".join(flags)
 
@@ -185,6 +194,7 @@ class QuiverArrowCommand(Command):
             self.channel_mode,
             self.operation,
             self.id_,
+            self.scheme,
             self.host,
             self.port,
             self.path,

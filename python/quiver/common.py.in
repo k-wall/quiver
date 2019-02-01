@@ -224,9 +224,13 @@ class Command(object):
         if url.path is None:
             raise CommandError("The URL has no path")
 
+        self.scheme = url.scheme
         self.host = url.hostname
         self.port = url.port
         self.path = url.path
+
+        if self.scheme is None:
+            self.scheme = 'amqp'
 
         if self.host is None:
             # XXX Should be "localhost" - a workaround for a proton issue

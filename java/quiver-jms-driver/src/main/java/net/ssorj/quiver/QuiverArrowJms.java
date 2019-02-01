@@ -37,11 +37,11 @@ public class QuiverArrowJms {
         String connectionMode = args[0];
         String channelMode = args[1];
         String operation = args[2];
-        String path = args[6];
-        int messages = Integer.parseInt(args[7]);
-        int bodySize = Integer.parseInt(args[8]);
-        int transactionSize = Integer.parseInt(args[10]);
-        String[] flags = args[11].split(",");
+        String path = args[7];
+        int messages = Integer.parseInt(args[8]);
+        int bodySize = Integer.parseInt(args[9]);
+        int transactionSize = Integer.parseInt(args[11]);
+        String[] flags = args[12].split(",");
 
         if (!connectionMode.equals("client")) {
             throw new RuntimeException("This impl supports client mode only");

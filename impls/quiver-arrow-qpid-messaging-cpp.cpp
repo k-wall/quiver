@@ -64,6 +64,7 @@ std::vector<std::string> split(const std::string &s, char delim) {
 struct Client {
     std::string operation;
     std::string id;
+    std::string scheme;
     std::string host;
     std::string port;
     std::string path;
@@ -73,6 +74,7 @@ struct Client {
     int transaction_size;
 
     bool durable;
+    bool insecure;
 
     int sent = 0;
     int received = 0;
@@ -87,6 +89,7 @@ void Client::run() {
     std::ostringstream oss;
     oss << "{"
         << "protocol: amqp1.0,"
+        << "transport: " << scheme == "amqps" ? "ssl" : "tcp" << ","
         << "container_id: " << id << ","
         << "sasl_mechanisms: ANONYMOUS"
         << "}";
@@ -204,17 +207,19 @@ int main(int argc, char** argv) {
 
     client.operation = argv[3];
     client.id = argv[4];
-    client.host = argv[5];
-    client.port = argv[6];
-    client.path = argv[7];
-    client.messages = std::atoi(argv[8]);
-    client.body_size = std::atoi(argv[9]);
-    client.credit_window = std::atoi(argv[10]);
-    client.transaction_size = std::atoi(argv[11]);
+    client.schema = argv[5];
+    client.host = argv[6];
+    client.port = argv[7];
+    client.path = argv[8];
+    client.messages = std::atoi(argv[9]);
+    client.body_size = std::atoi(argv[10]);
+    client.credit_window = std::atoi(argv[11]);
+    client.transaction_size = std::atoi(argv[12]);
 
-    std::vector<std::string> flags = split(argv[12], ',');
+    std::vector<std::string> flags = split(argv[13], ',');
 
     client.durable = std::any_of(flags.begin(), flags.end(), [](std::string &s) { return s == "durable"; });
+    client.insecure = std::any_of(flags.begin(), flags.end(), [](std::string &s) { return s == "insecure"; });
 
     try {
         client.run();

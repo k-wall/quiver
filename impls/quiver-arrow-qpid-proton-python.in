@@ -24,7 +24,7 @@ import uuid
 
 from proton import Message, VERSION, __file__ as proton_module_file
 from proton.handlers import MessagingHandler
-from proton.reactor import Container
+from proton.reactor import Container, SSLDomain
 
 default_home = os.path.normpath("@quiver_home@")
 home = os.environ.get("QUIVER_HOME", default_home)
@@ -56,10 +56,10 @@ class Handler(MessagingHandler):
         self.accepted = 0
 
     def on_start(self, event):
-        domain = "{}:{}".format(self.host, self.port)
+        domain = "{}://{}:{}".format(self.scheme, self.host, self.port)
 
         if self.connection_mode == "client":
-            event.container.connect(domain, allowed_mechs="ANONYMOUS")
+            event.container.connect(domain, ssl_domain=self.ssl_domain, allowed_mechs="ANONYMOUS")
         elif self.connection_mode == "server":
             self.listener = event.container.listen(domain)
         else:
@@ -173,16 +173,23 @@ def main():
     handler.connection_mode = ARGS[1]
     handler.channel_mode = ARGS[2]
     handler.operation = ARGS[3]
-    handler.host = ARGS[5]
-    handler.port = ARGS[6]
-    handler.path = ARGS[7]
-    handler.messages = int(ARGS[8])
-    handler.body_size = int(ARGS[9])
+    handler.scheme = ARGS[5]
+    handler.host = ARGS[6]
+    handler.port = ARGS[7]
+    handler.path = ARGS[8]
+    handler.messages = int(ARGS[9])
+    handler.body_size = int(ARGS[10])
 
     flags = ARGS[12].split(",")
 
+
     if "durable" in flags:
         handler.durable = True
+
+    if handler.scheme == 'amqps':
+        handler.ssl_domain = SSLDomain(SSLDomain.MODE_CLIENT if handler.connection_mode == 'client' else SSLDomain.MODE_SERVER)
+        if "insecure" in flags:
+            handler.ssl_domain.set_peer_authentication(SSLDomain.ANONYMOUS_PEER)
 
     container = Container(handler)
     container.container_id = ARGS[4]

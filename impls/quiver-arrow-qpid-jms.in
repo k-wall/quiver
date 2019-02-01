@@ -43,9 +43,11 @@ def main():
         exit()
 
     id_ = ARGS[4]
-    host = ARGS[5]
-    port = ARGS[6]
-    credit_window = ARGS[10]
+    scheme = ARGS[5]
+    host = ARGS[6]
+    port = ARGS[7]
+    credit_window = ARGS[11]
+    flags = ARGS[-1]
 
     params = (
         "jms.clientID={}".format(id_),
@@ -53,7 +55,13 @@ def main():
         "amqp.saslMechanisms=ANONYMOUS",
     )
 
-    url = "amqp://{}:{}?{}".format(host, port, "&".join(params))
+    if scheme == "amqps" and "insecure" in flags.split(','):
+        params = params + (
+            "transport.trustAll=true",
+            "transport.verifyHost=true",
+        )
+
+    url = "{}://{}:{}?{}".format(scheme, host, port, "&".join(params))
 
     args = ["/usr/bin/env", "--", "java"]
 
